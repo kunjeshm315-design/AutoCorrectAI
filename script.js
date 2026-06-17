@@ -1,13 +1,36 @@
-let history = [];
+let historyList = [];
 let totalFixes = 0;
 let totalWords = 0;
 let currentTone = 'Casual';
 
+const commonFixes = {
+    'wnt':'want','wnt':'want','fogot':'forgot','walet':'wallet','hom':'home',
+    'wether':'weather','verry':'very','coudnt':'couldn\'t','coudnt':'couldn\'t',
+    'kees':'keys','exmple':'example','writting':'writing','mistkes':'mistakes',
+    'sentances':'sentences','tomoro':'tomorrow','teh':'the','recieve':'receive',
+    'beleive':'believe','freind':'friend','wierd':'weird','occured':'occurred',
+    'untill':'until','seperate':'separate','definately':'definitely','goverment':'government',
+    'occassion':'occasion','accomodate':'accommodate','calender':'calendar',
+    'enviroment':'environment','existance':'existence','independant':'independent',
+    'knowlege':'knowledge','maintainance':'maintenance','millenium':'millennium',
+    'neccessary':'necessary','occurance':'occurrence','persistance':'persistence',
+    'privalege':'privilege','professer':'professor','reccomend':'recommend',
+    'refered':'referred','religous':'religious','remeber':'remember','repitition':'repetition',
+    'restarant':'restaurant','rythm':'rhythm','sence':'sense','sieze':'seize',
+    'succesful':'successful','suprise':'surprise','tatoo':'tattoo','temperture':'temperature',
+    'tommorow':'tomorrow','truely':'truly','unforseen':'unforeseen','untill':'until',
+    'vaccum':'vacuum','visious':'vicious','wellcome':'welcome','wierd':'weird',
+    'i ':'I ','dont':"don't",'cant':"can't",'wont':"won't",'isnt':"isn't",
+    'arent':"aren't",'wasnt':"wasn't",'werent':"weren't",'hasnt':"hasn't",
+    'havent':"haven't",'hadnt':"hadn't",'doesnt':"doesn't",'didnt':"didn't",
+    'im':"I'm",'ive':"I've",'id':"I'd",'ill':"I'll"
+};
+
 function showPage(page) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     document.querySelectorAll('.nav-tab').forEach(n => n.classList.remove('active'));
     document.getElementById('page-' + page).classList.add('active');
+    event.target.classList.add('active');
 }
 
 function setTone(tone, btn) {
@@ -33,6 +56,16 @@ function loadSample() {
     updateCount();
 }
 
+async function pasteText() {
+    try {
+        const text = await navigator.clipboard.readText();
+        document.getElementById('input-text').value = text;
+        updateCount();
+    } catch(e) {
+        alert('Paste manually using Ctrl+V');
+    }
+}
+
 function clearAll() {
     document.getElementById('input-text').value = '';
     document.getElementById('output-text').value = '';
@@ -43,38 +76,53 @@ function clearAll() {
     document.getElementById('tab-content').style.display = 'none';
 }
 
-async function correctText() {
+function correctTextJS(text) {
+    let corrected = text;
+    let errorCount = 0;
+
+    Object.keys(commonFixes).forEach(wrong => {
+        const regex = new RegExp('\\b' + wrong + '\\b', 'gi');
+        const matches = corrected.match(regex);
+        if (matches) errorCount += matches.length;
+        corrected = corrected.replace(regex, commonFixes[wrong]);
+    });
+
+    corrected = corrected.replace(/\.\s+([a-z])/g, (m, p1) => '. ' + p1.toUpperCase());
+    corrected = corrected.charAt(0).toUpperCase() + corrected.slice(1);
+
+    return { corrected, errorCount };
+}
+
+function correctText() {
     const text = document.getElementById('input-text').value.trim();
     if (!text) { alert('Please enter some text first!'); return; }
 
     document.getElementById('output-text').value = 'Correcting...';
 
-    try {
-        const response = await fetch('http://127.0.0.1:5000/correct', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: text, tone: currentTone })
-        });
+    setTimeout(() => {
+        const words = text.split(/\s+/);
+        const { corrected, errorCount } = correctTextJS(text);
 
-        const data = await response.json();
+        document.getElementById('output-text').value = corrected;
 
-        document.getElementById('output-text').value = data.corrected;
+        totalFixes += errorCount;
+        totalWords += words.length;
 
-        totalFixes += data.errors;
-        totalWords += data.words;
+        document.getElementById('stat-errors').textContent = errorCount;
+        document.getElementById('stat-words').textContent = words.length;
 
-        document.getElementById('stat-errors').textContent = data.errors;
-        document.getElementById('stat-words').textContent = data.words;
-        document.getElementById('stat-before').textContent = data.accuracy_before + '%';
+        const accuracyBefore = Math.round(((words.length - errorCount) / words.length) * 100);
+        document.getElementById('stat-before').textContent = accuracyBefore + '%';
         document.getElementById('stat-after').textContent = '100%';
 
         document.getElementById('sb-fixes').textContent = totalFixes;
-        document.getElementById('sb-docs').textContent = history.length + 1;
+        document.getElementById('sb-docs').textContent = historyList.length + 1;
         document.getElementById('sb-words').textContent = totalWords;
 
-        document.getElementById('tag-corrections').textContent = '+' + data.errors + ' corrections';
-        document.getElementById('tag-spelling').textContent = '✗' + data.errors + ' spelling';
+        document.getElementById('tag-corrections').textContent = '+' + errorCount + ' corrections';
+        document.getElementById('tag-spelling').textContent = '✗' + errorCount + ' spelling';
         document.getElementById('tag-grammar').textContent = '◆1 grammar';
+        document.querySelector('.badge').textContent = errorCount;
 
         document.getElementById('stats-grid').style.display = 'grid';
         document.getElementById('correction-tags').style.display = 'flex';
@@ -82,25 +130,22 @@ async function correctText() {
         document.getElementById('tab-content').style.display = 'block';
 
         document.getElementById('grammar-tip-text').textContent =
-            'AutoCorrect AI fixed ' + data.errors + ' spelling errors in your text using offline engine.';
+            'AutoCorrect AI fixed ' + errorCount + ' errors in your text using offline engine.';
 
-        history.unshift({ original: text, corrected: data.corrected, errors: data.errors, words: data.words });
+        historyList.unshift({ original: text, corrected, errors: errorCount, words: words.length });
         updateHistory();
-
-    } catch (error) {
-        document.getElementById('output-text').value = 'Error: Make sure Flask server is running!\nRun: python app.py';
-    }
+    }, 600);
 }
 
 function updateHistory() {
     const list = document.getElementById('history-list');
-    if (history.length === 0) {
+    if (historyList.length === 0) {
         list.innerHTML = '<p style="color:#555">No corrections yet.</p>';
         return;
     }
-    list.innerHTML = history.map((item, i) => `
+    list.innerHTML = historyList.map((item, i) => `
         <div class="history-item">
-            <strong>Correction #${history.length - i}</strong> — ${item.words} words · ${item.errors} errors fixed
+            <strong>Correction #${historyList.length - i}</strong> — ${item.words} words · ${item.errors} errors fixed
             <div style="display:flex;gap:12px;margin-top:8px">
                 <div style="flex:1">
                     <div style="color:#555;font-size:11px;margin-bottom:4px">ORIGINAL</div>
@@ -122,36 +167,34 @@ function showTab(tab) {
 
 function copyText() {
     const text = document.getElementById('output-text').value;
-    navigator.clipboard.writeText(text);
-    alert('Copied to clipboard!');
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => alert('Copied!'));
 }
 
 function speakText() {
     const text = document.getElementById('output-text').value;
     if (!text) return;
-    const utterance = new SpeechSynthesisUtterance(text);
-    window.speechSynthesis.speak(utterance);
+    window.speechSynthesis.speak(new SpeechSynthesisUtterance(text));
 }
 
 function exportTXT() {
     const text = document.getElementById('output-text').value;
     if (!text) return;
-    const blob = new Blob([text], { type: 'text/plain' });
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
+    a.href = URL.createObjectURL(new Blob([text], {type:'text/plain'}));
     a.download = 'corrected.txt';
     a.click();
 }
 
 function exportDOCX() {
-    alert('DOCX export requires additional library. TXT export is available!');
+    alert('TXT export available! Use TXT button.');
 }
 
 function toggleTheme() {
-    alert('Theme toggle coming soon!');
+    document.body.style.background = document.body.style.background === 'white' ? '' : 'white';
 }
 
-document.addEventListener('keydown', function(e) {
+document.addEventListener('keydown', e => {
     if (e.ctrlKey && e.key === 'Enter') correctText();
     if (e.ctrlKey && e.key === 'd') { e.preventDefault(); clearAll(); }
 });
