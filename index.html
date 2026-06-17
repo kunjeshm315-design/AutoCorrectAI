@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoCorrectAI</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body>
+    <div class="app">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-logo">
+                <div class="logo-icon">✏️</div>
+                <div>
+                    <div class="logo-title">AutoCorrectAI</div>
+                    <div class="logo-sub">Pinnacle Labs · 2026</div>
+                </div>
+            </div>
+            <div class="sidebar-divider"></div>
+            <div class="sidebar-nav">
+                <div class="nav-item active" onclick="showPage('editor')">
+                    <span class="material-icons">edit_note</span> Editor
+                </div>
+                <div class="nav-item" onclick="showPage('history')">
+                    <span class="material-icons">history</span> History
+                </div>
+                <div class="nav-item" onclick="showPage('about')">
+                    <span class="material-icons">info</span> About
+                </div>
+            </div>
+            <div class="sidebar-bottom">
+                <div class="sidebar-stats">
+                    <div class="stat-row"><span>FIXES MADE</span><span id="sb-fixes">0</span></div>
+                    <div class="stat-row"><span>DOCS CORRECTED</span><span id="sb-docs">0</span></div>
+                    <div class="stat-row"><span>WORDS CHECKED</span><span id="sb-words">0</span></div>
+                </div>
+                <div class="settings-btn">
+                    <span class="material-icons">settings</span> Settings
+                </div>
+                <div class="offline-badge">● Offline Engine Ready</div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main">
+            <!-- Top Navbar -->
+            <div class="navbar">
+                <div class="nav-tabs">
+                    <span class="nav-tab active" onclick="showPage('editor')">Editor</span>
+                    <span class="nav-tab" onclick="showPage('history')">History</span>
+                    <span class="nav-tab" onclick="showPage('about')">About</span>
+                </div>
+                <div class="nav-actions">
+                    <button class="btn-icon" onclick="toggleTheme()"><span class="material-icons">light_mode</span></button>
+                    <button class="btn-clear" onclick="clearAll()"><span class="material-icons">close</span> Clear</button>
+                    <button class="btn-plagiarism"><span class="material-icons">plagiarism</span> Plagiarism</button>
+                    <button class="btn-correct" onclick="correctText()"><span class="material-icons">auto_fix_high</span> Correct Text</button>
+                </div>
+            </div>
+
+            <!-- Editor Page -->
+            <div id="page-editor" class="page active">
+                <div class="page-header">
+                    <h1>Smart Text Editor</h1>
+                    <p>Type, paste, or upload a file. Select a tone to rewrite your text.</p>
+                </div>
+
+                <!-- Tone Selector -->
+                <div class="tone-bar">
+                    <span class="material-icons" style="font-size:16px;color:#888">tune</span>
+                    <span style="color:#888;font-size:13px">TONE:</span>
+                    <button class="tone-btn" onclick="setTone('Default', this)">✦ Default</button>
+                    <button class="tone-btn" onclick="setTone('Formal', this)">🎩 Formal</button>
+                    <button class="tone-btn active" onclick="setTone('Casual', this)">😊 Casual</button>
+                    <button class="tone-btn" onclick="setTone('Professional', this)">💼 Professional</button>
+                    <span class="tone-desc" id="tone-desc">Business-ready language, precise and polished</span>
+                </div>
+
+                <!-- File Upload -->
+                <div class="upload-bar">
+                    <span class="material-icons" style="font-size:16px">description</span>
+                    <span>Drop a file here or <span class="browse-link">browse</span></span>
+                    <span class="file-tag">PDF</span>
+                    <span class="file-tag">DOCX</span>
+                    <span class="file-tag">TXT</span>
+                    <span style="color:#555;font-size:12px">up to 10 MB</span>
+                </div>
+
+                <!-- Text Areas -->
+                <div class="editor-area">
+                    <div class="text-panel">
+                        <div class="panel-header">
+                            <span><span class="material-icons" style="font-size:14px">description</span> ORIGINAL TEXT</span>
+                            <span id="char-count">0 / 100,000</span>
+                        </div>
+                        <textarea id="input-text" placeholder="Type your text here with mistakes..." oninput="updateCount()"></textarea>
+                        <div class="panel-footer">
+                            <div>
+                                <button class="btn-sm" onclick="pasteText()"><span class="material-icons" style="font-size:14px">content_paste</span> Paste</button>
+                                <button class="btn-sm" onclick="loadSample()">✦ Sample</button>
+                            </div>
+                            <span style="color:#555;font-size:11px">Ctrl+Enter · Ctrl+D · Ctrl+Shift+C</span>
+                        </div>
+                    </div>
+
+                    <button class="arrow-btn" onclick="correctText()">→</button>
+
+                    <div class="text-panel">
+                        <div class="panel-header">
+                            <span><span class="material-icons" style="font-size:14px">check_circle</span> CORRECTED TEXT</span>
+                            <div>
+                                <span class="live-badge">● Live</span>
+                                <span class="offline-tag">OFFLINE ENGINE</span>
+                            </div>
+                        </div>
+                        <textarea id="output-text" placeholder="Corrected text will appear here..." readonly></textarea>
+                        <div class="panel-footer">
+                            <div>
+                                <button class="btn-sm" onclick="copyText()"><span class="material-icons" style="font-size:14px">content_copy</span> Copy</button>
+                                <button class="btn-sm" onclick="speakText()"><span class="material-icons" style="font-size:14px">volume_up</span> Speak</button>
+                            </div>
+                            <div>
+                                <span style="color:#555;font-size:11px">Export:</span>
+                                <button class="btn-sm" onclick="exportTXT()">TXT</button>
+                                <button class="btn-sm" onclick="exportDOCX()">DOCX</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats -->
+                <div class="stats-grid" id="stats-grid" style="display:none">
+                    <div class="stat-card">
+                        <div class="stat-icon warn">⚠️</div>
+                        <div class="stat-num" id="stat-errors">0</div>
+                        <div class="stat-label">ERRORS FOUND</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📝</div>
+                        <div class="stat-num" id="stat-words">0</div>
+                        <div class="stat-label">WORDS CHECKED</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📊</div>
+                        <div class="stat-num" id="stat-before">0%</div>
+                        <div class="stat-label">ACCURACY BEFORE</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon success">✅</div>
+                        <div class="stat-num green" id="stat-after">100%</div>
+                        <div class="stat-label">ACCURACY AFTER</div>
+                    </div>
+                </div>
+
+                <!-- Corrections Tags -->
+                <div class="correction-tags" id="correction-tags" style="display:none">
+                    <span class="tag green" id="tag-corrections">+0 corrections</span>
+                    <span class="tag red" id="tag-spelling">✗0 spelling</span>
+                    <span class="tag blue" id="tag-grammar">◆0 grammar</span>
+                </div>
+
+                <!-- Tabs -->
+                <div class="result-tabs" id="result-tabs" style="display:none">
+                    <span class="result-tab" onclick="showTab('changes')">Changes</span>
+                    <span class="result-tab" onclick="showTab('corrections')">Corrections <span class="badge">0</span></span>
+                    <span class="result-tab active" onclick="showTab('explanation')">Explanation</span>
+                </div>
+                <div class="tab-content" id="tab-content" style="display:none">
+                    <div class="grammar-tip">
+                        <span>🔧</span>
+                        <div>
+                            <strong>Grammar Tip</strong>
+                            <p id="grammar-tip-text">AutoCorrect AI detects spelling errors and fixes them automatically.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- History Page -->
+            <div id="page-history" class="page">
+                <div class="page-header">
+                    <h1>Correction History</h1>
+                </div>
+                <div id="history-list"><p style="color:#555">No corrections yet.</p></div>
+            </div>
+
+            <!-- About Page -->
+            <div id="page-about" class="page">
+                <div class="page-header">
+                    <h1>About AutoCorrectAI</h1>
+                </div>
+                <div class="about-content">
+                    <p>AutoCorrectAI is a smart text correction tool built with Python Flask + HTML/CSS.</p>
+                    <h3>Features</h3>
+                    <ul>
+                        <li>Real-time spell checking</li>
+                        <li>Multiple tone options</li>
+                        <li>Correction history</li>
+                        <li>Accuracy statistics</li>
+                        <li>Export to TXT/DOCX</li>
+                    </ul>
+                    <h3>Built With</h3>
+                    <div class="built-tags">
+                        <span>Python</span><span>Flask</span><span>TextBlob</span><span>HTML</span><span>CSS</span><span>JavaScript</span>
+                    </div>
+                    <p style="color:#555;margin-top:1rem">Pinnacle Labs · 2026</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
