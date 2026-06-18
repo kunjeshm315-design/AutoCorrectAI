@@ -213,9 +213,21 @@ document.querySelector('.upload-bar').addEventListener('click', () => {
                 updateCount();
             };
             reader.readAsText(file);
-        } else {
-            alert('PDF/DOCX support coming soon! Please use TXT files for now.');
-        }
+        } else if (file.name.endsWith('.docx')) {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        const arrayBuffer = e.target.result;
+        const mammoth = await import('https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js');
+        const result = await mammoth.extractRawText({ arrayBuffer });
+        document.getElementById('input-text').value = result.value;
+        updateCount();
+    };
+    reader.readAsArrayBuffer(file);
+} else if (file.name.endsWith('.pdf')) {
+    alert('PDF support: Please copy-paste text from PDF manually!');
+} else {
+    alert('Supported formats: TXT and DOCX only!');
+}
     };
     input.click();
 });
