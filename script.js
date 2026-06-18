@@ -270,3 +270,118 @@ document.querySelector('.settings-btn').addEventListener('click', () => {
     `;
     document.querySelector('.sidebar').appendChild(modal);
 });
+document.querySelector('.btn-plagiarism').addEventListener('click', () => {
+    const text = document.getElementById('input-text').value.trim();
+    if (!text) { alert('Please enter some text first!'); return; }
+
+    const existing = document.getElementById('plagiarism-modal');
+    if (existing) { existing.remove(); return; }
+
+    // Basic plagiarism check logic
+    const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 10);
+    const words = text.split(/\s+/);
+    const uniqueWords = new Set(words.map(w => w.toLowerCase()));
+    const repetitionScore = Math.round((uniqueWords.size / words.length) * 100);
+    
+    const commonPhrases = [
+        'the quick brown fox', 'to be or not to be', 'once upon a time',
+        'in conclusion', 'as a result', 'for example', 'in other words',
+        'it is important', 'in today\'s world', 'since the beginning of time'
+    ];
+    
+    let foundPhrases = [];
+    commonPhrases.forEach(phrase => {
+        if (text.toLowerCase().includes(phrase)) {
+            foundPhrases.push(phrase);
+        }
+    });
+
+    const originalityScore = Math.min(100, Math.max(0, 
+        repetitionScore - (foundPhrases.length * 10)
+    ));
+
+    const modal = document.createElement('div');
+    modal.id = 'plagiarism-modal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 420px;
+        background: #161b22;
+        border: 1px solid #30363d;
+        border-radius: 12px;
+        padding: 20px;
+        z-index: 9999;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    `;
+
+    const scoreColor = originalityScore > 70 ? '#3fb950' : originalityScore > 40 ? '#d29922' : '#f85149';
+    const scoreLabel = originalityScore > 70 ? 'Original ✅' : originalityScore > 40 ? 'Partially Original ⚠️' : 'Possibly Copied ❌';
+
+    modal.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <span style="font-size:15px;font-weight:600;color:#e6edf3">📋 Plagiarism Report</span>
+            <button onclick="document.getElementById('plagiarism-modal').remove()" 
+                style="background:none;border:none;color:#8b949e;font-size:18px;cursor:pointer">✕</button>
+        </div>
+        
+        <div style="text-align:center;margin-bottom:16px">
+            <div style="font-size:48px;font-weight:700;color:${scoreColor}">${originalityScore}%</div>
+            <div style="font-size:14px;color:${scoreColor}">${scoreLabel}</div>
+        </div>
+
+        <div style="background:#0d1117;border-radius:8px;padding:12px;margin-bottom:12px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+                <span style="font-size:12px;color:#8b949e">Total Words</span>
+                <span style="font-size:12px;color:#e6edf3">${words.length}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+                <span style="font-size:12px;color:#8b949e">Unique Words</span>
+                <span style="font-size:12px;color:#e6edf3">${uniqueWords.size}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+                <span style="font-size:12px;color:#8b949e">Total Sentences</span>
+                <span style="font-size:12px;color:#e6edf3">${sentences.length}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between">
+                <span style="font-size:12px;color:#8b949e">Common Phrases Found</span>
+                <span style="font-size:12px;color:${foundPhrases.length > 0 ? '#f85149' : '#3fb950'}">${foundPhrases.length}</span>
+            </div>
+        </div>
+
+        ${foundPhrases.length > 0 ? `
+        <div style="background:#f8514922;border:1px solid #f85149;border-radius:8px;padding:10px;margin-bottom:12px">
+            <div style="font-size:12px;color:#f85149;margin-bottom:6px">⚠️ Common Phrases Detected:</div>
+            ${foundPhrases.map(p => `<div style="font-size:11px;color:#8b949e;padding:2px 0">• "${p}"</div>`).join('')}
+        </div>` : `
+        <div style="background:#3fb95022;border:1px solid #3fb950;border-radius:8px;padding:10px;margin-bottom:12px">
+            <div style="font-size:12px;color:#3fb950">✅ No common phrases detected!</div>
+        </div>`}
+
+        <div style="background:#0d1117;border-radius:6px;padding:8px;margin-bottom:12px">
+            <div style="font-size:11px;color:#555;text-align:center">
+                ⚡ Powered by AutoCorrectAI Offline Engine
+            </div>
+        </div>
+
+        <button onclick="document.getElementById('plagiarism-modal').remove()"
+            style="width:100%;background:#238636;border:none;color:white;padding:8px;border-radius:6px;font-size:13px;cursor:pointer;font-weight:500">
+            Close Report
+        </button>
+    `;
+
+    // Backdrop
+    const backdrop = document.createElement('div');
+    backdrop.style.cssText = `
+        position:fixed;top:0;left:0;width:100%;height:100%;
+        background:rgba(0,0,0,0.5);z-index:9998;
+    `;
+    backdrop.onclick = () => {
+        modal.remove();
+        backdrop.remove();
+    };
+
+    document.body.appendChild(backdrop);
+    document.body.appendChild(modal);
+});
