@@ -198,3 +198,75 @@ document.addEventListener('keydown', e => {
     if (e.ctrlKey && e.key === 'Enter') correctText();
     if (e.ctrlKey && e.key === 'd') { e.preventDefault(); clearAll(); }
 });
+document.querySelector('.upload-bar').addEventListener('click', () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.txt,.pdf,.docx';
+    input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        if (file.name.endsWith('.txt')) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('input-text').value = e.target.result;
+                updateCount();
+            };
+            reader.readAsText(file);
+        } else {
+            alert('PDF/DOCX support coming soon! Please use TXT files for now.');
+        }
+    };
+    input.click();
+});
+
+document.querySelector('.settings-btn').addEventListener('click', () => {
+    const existing = document.getElementById('settings-modal');
+    if (existing) { existing.remove(); return; }
+    
+    const modal = document.createElement('div');
+    modal.id = 'settings-modal';
+    modal.style.cssText = `
+        position: absolute;
+        bottom: 60px;
+        left: 10px;
+        width: 200px;
+        background: #161b22;
+        border: 1px solid #30363d;
+        border-radius: 8px;
+        padding: 12px;
+        z-index: 999;
+    `;
+    modal.innerHTML = `
+        <div style="font-size:13px;font-weight:500;margin-bottom:12px;color:#e6edf3">Settings</div>
+        <div style="margin-bottom:10px">
+            <label style="font-size:12px;color:#8b949e;display:block;margin-bottom:4px">Theme</label>
+            <select onchange="document.body.style.background=this.value==='light'?'#ffffff':'#0d1117'" 
+                style="width:100%;background:#0d1117;color:#e6edf3;border:1px solid #30363d;border-radius:4px;padding:4px;font-size:12px">
+                <option value="dark">Dark</option>
+                <option value="light">Light</option>
+            </select>
+        </div>
+        <div style="margin-bottom:10px">
+            <label style="font-size:12px;color:#8b949e;display:block;margin-bottom:4px">Font Size</label>
+            <select onchange="document.querySelector('textarea').style.fontSize=this.value"
+                style="width:100%;background:#0d1117;color:#e6edf3;border:1px solid #30363d;border-radius:4px;padding:4px;font-size:12px">
+                <option value="13px">Small</option>
+                <option value="15px">Medium</option>
+                <option value="17px">Large</option>
+            </select>
+        </div>
+        <div style="margin-bottom:10px">
+            <label style="font-size:12px;color:#8b949e;display:block;margin-bottom:4px">Auto Correct</label>
+            <select style="width:100%;background:#0d1117;color:#e6edf3;border:1px solid #30363d;border-radius:4px;padding:4px;font-size:12px">
+                <option>On</option>
+                <option>Off</option>
+            </select>
+        </div>
+        <button onclick="document.getElementById('settings-modal').remove()" 
+            style="width:100%;background:#238636;border:none;color:white;padding:5px;border-radius:4px;font-size:12px;cursor:pointer;margin-top:4px">
+            Close
+        </button>
+    `;
+    document.querySelector('.sidebar').appendChild(modal);
+});
