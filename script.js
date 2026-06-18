@@ -224,8 +224,23 @@ document.querySelector('.upload-bar').addEventListener('click', () => {
     };
     reader.readAsArrayBuffer(file);
 } else if (file.name.endsWith('.pdf')) {
-    alert('PDF support: Please copy-paste text from PDF manually!');
-} else {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        const typedArray = new Uint8Array(e.target.result);
+        const pdfjsLib = await import('https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js');
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+        const pdf = await pdfjsLib.getDocument(typedArray).promise;
+        let fullText = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const content = await page.getTextContent();
+            fullText += content.items.map(item => item.str).join(' ') + '\n';
+        }
+        document.getElementById('input-text').value = fullText;
+        updateCount();
+    };
+    reader.readAsArrayBuffer(file);
+}else {
     alert('Supported formats: TXT and DOCX only!');
 }
     };
